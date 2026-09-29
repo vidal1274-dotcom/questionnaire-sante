@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://vidal1274-dotcom.github.io";
 const GH_OWNER = process.env.GH_OWNER || "vidal1274-dotcom";
@@ -73,11 +74,11 @@ async function saveToGitHub(record, id, receivedAt) {
 }
 
 async function sendEmail(data, id, receivedAt) {
-  const apiKey = process.env.RESEND_API_KEY;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_APP_PASSWORD;
   const mailTo = process.env.MAIL_TO;
-  const mailFrom = process.env.MAIL_FROM;
 
-  if (!apiKey || !mailTo || !mailFrom) return false;
+  if (!smtpUser || !smtpPass || !mailTo) return false;
 
   const recipients = mailTo
     .split(",")
@@ -86,21 +87,22 @@ async function sendEmail(data, id, receivedAt) {
 
   if (!recipients.length) return false;
 
-  const r = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from: mailFrom,
-      to: recipients,
-      subject: "Nouvelle réponse - Questionnaire professionnels de santé",
-      text: makeMailText(data, id, receivedAt)
-    })
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: smtpUser,
+      pass: smtpPass
+    }
   });
 
-  return r.ok;
+  await transporter.sendMail({
+    from: `Questionnaire Santé <${smtpUser}>`,
+    to: recipients.join(","),
+    subject: "Nouvelle réponse - Questionnaire professionnels de santé",
+    text: makeMailText(data, id, receivedAt)
+  });
+
+  return true;
 }
 
 module.exports = async function handler(req, res) {
@@ -121,7 +123,13 @@ module.exports = async function handler(req, res) {
     const record = { id, receivedAt, source: "questionnaire-sante", data };
 
     const githubPath = await saveToGitHub(record, id, receivedAt);
-    const emailSent = await sendEmail(data, id, receivedAt);
+
+    let emailSent = false;
+    try {
+      emailSent = await sendEmail(data, id, receivedAt);
+    } catch (emailError) {
+      console.error("Erreur email:", emailError);
+    }
 
     return res.status(201).json({ ok: true, id, githubPath, emailSent });
   } catch (e) {
