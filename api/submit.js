@@ -79,6 +79,13 @@ async function sendEmail(data, id, receivedAt) {
 
   if (!apiKey || !mailTo || !mailFrom) return false;
 
+  const recipients = mailTo
+    .split(",")
+    .map(v => v.trim())
+    .filter(Boolean);
+
+  if (!recipients.length) return false;
+
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -87,7 +94,7 @@ async function sendEmail(data, id, receivedAt) {
     },
     body: JSON.stringify({
       from: mailFrom,
-      to: [mailTo],
+      to: recipients,
       subject: "Nouvelle réponse - Questionnaire professionnels de santé",
       text: makeMailText(data, id, receivedAt)
     })
