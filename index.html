@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Questionnaire professionnels de santé</title>
+<meta name="description" content="Questionnaire court destiné aux professionnels de santé.">
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--text:#172033;--muted:#5f6c80;--accent:#275efe;--accent2:#eaf0ff;--border:#dce3ee;--ok:#0f766e}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.wrap{max-width:900px;margin:auto;padding:24px}.hero,.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:26px;box-shadow:0 8px 28px rgba(20,35,70,.05)}
+.hero{background:linear-gradient(135deg,#fff,#eef3ff)}.card{margin-top:18px}.badge{display:inline-block;background:var(--accent2);color:var(--accent);font-weight:700;padding:6px 10px;border-radius:999px;font-size:.85rem}
+h1{font-size:2rem;line-height:1.15;margin:14px 0 10px}h2{margin-top:0}p{color:var(--muted)}.notice{background:#eefaf8;border-left:4px solid var(--ok);padding:12px 14px;border-radius:8px;color:#164e63}
+.q{padding:18px 0;border-bottom:1px solid #edf1f6}.q:last-child{border-bottom:0}label.title{display:block;font-weight:700;margin-bottom:10px;color:var(--text)}
+.help{font-size:.9rem;color:var(--muted);margin:0 0 10px}.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px}
+.choice{display:flex;gap:9px;align-items:flex-start;color:#374151;background:#fafbfd;border:1px solid #edf1f6;border-radius:9px;padding:8px 10px}
+input[type=checkbox],input[type=radio]{margin-top:4px;transform:scale(1.05)}textarea,input[type=text]{width:100%;border:1px solid #cfd8e6;border-radius:10px;padding:12px;font:inherit;background:#fff}
+textarea{min-height:80px;resize:vertical}.note-autre{margin-top:10px;min-height:54px;background:#fcfdff}.actions{display:flex;justify-content:center;margin-top:26px}
+button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1.05rem;cursor:pointer;background:var(--accent);color:#fff;min-width:220px}
+.footer{text-align:center;color:#7b8798;font-size:.9rem;padding:28px 8px}@media(max-width:680px){.wrap{padding:14px}.hero,.card{padding:18px}h1{font-size:1.65rem}.choices{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero">
+<span class="badge">Étude terrain indépendante</span>
+<h1>Questionnaire destiné aux professionnels de santé</h1>
+<p>L’objectif est d’identifier les difficultés récurrentes rencontrées au quotidien, les fonctions manquantes dans les outils actuels et les solutions qui pourraient réellement vous faire gagner du temps.</p>
+<p><strong>Il ne s’agit pas d’une démarche commerciale. Aucune donnée patient n’est demandée.</strong></p>
+<div class="notice">Temps de réponse indicatif : environ 5 minutes. La majorité des réponses se fait en cochant simplement des cases.</div>
+</section>
+
+<form id="survey" class="card">
+<h2>Votre pratique et vos besoins</h2>
+
+<div class="q"><label class="title">1. Votre activité principale</label><div class="choices">
+<label class="choice"><input type="radio" name="profession" value="Médecin généraliste"> Médecin généraliste</label>
+<label class="choice"><input type="radio" name="profession" value="Médecin spécialiste"> Médecin spécialiste</label>
+<label class="choice"><input type="radio" name="profession" value="Chirurgien-dentiste"> Chirurgien-dentiste</label>
+<label class="choice"><input type="radio" name="profession" value="Infirmier"> Infirmier(ère)</label>
+<label class="choice"><input type="radio" name="profession" value="Pharmacien"> Pharmacien(ne)</label>
+<label class="choice"><input type="radio" name="profession" value="Paramédical"> Profession paramédicale</label>
+<label class="choice"><input type="radio" name="profession" value="Secrétariat"> Secrétaire / assistant(e) médical(e)</label>
+<label class="choice"><input type="radio" name="profession" value="Autre"> Autre</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_1" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">2. Votre mode d’exercice</label><div class="choices">
+<label class="choice"><input type="radio" name="structure" value="Cabinet individuel"> Cabinet individuel</label>
+<label class="choice"><input type="radio" name="structure" value="Cabinet de groupe"> Cabinet de groupe</label>
+<label class="choice"><input type="radio" name="structure" value="MSP"> Maison de santé / centre de santé</label>
+<label class="choice"><input type="radio" name="structure" value="Clinique"> Clinique / établissement privé</label>
+<label class="choice"><input type="radio" name="structure" value="Hôpital"> Hôpital / établissement public</label>
+<label class="choice"><input type="radio" name="structure" value="Autre"> Autre</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_2" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">3. Nom de votre logiciel métier principal</label>
+<input type="text" name="logiciel" placeholder="Ex. Doctolib, Weda, Hellodoc, Maiia, autre…">
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_3" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">4. Globalement, êtes-vous satisfait(e) de votre logiciel actuel ?</label><div class="choices">
+<label class="choice"><input type="radio" name="satisfaction" value="Très satisfait"> Très satisfait(e)</label>
+<label class="choice"><input type="radio" name="satisfaction" value="Plutôt satisfait"> Plutôt satisfait(e)</label>
+<label class="choice"><input type="radio" name="satisfaction" value="Mitigé"> Mitigé(e)</label>
+<label class="choice"><input type="radio" name="satisfaction" value="Plutôt insatisfait"> Plutôt insatisfait(e)</label>
+<label class="choice"><input type="radio" name="satisfaction" value="Très insatisfait"> Très insatisfait(e)</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_4" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">5. Quels problèmes rencontrez-vous régulièrement ?</label><p class="help">Plusieurs réponses possibles.</p><div class="choices">
+<label class="choice"><input type="checkbox" name="problemes" value="Double saisie"> Double saisie d’informations</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Recherche documents"> Recherche de documents / informations</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Comptes rendus"> Rédaction de comptes rendus / courriers</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Classement"> Classement de documents</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Relances"> Relances et rappels</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Suivi patients"> Suivi des patients dans le temps</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Coordination"> Coordination avec d’autres professionnels</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Résultats"> Gestion / lecture des résultats reçus</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Agenda"> Agenda / rendez-vous</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Facturation"> Facturation / télétransmission</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Messages"> Trop de messages / canaux différents</label>
+<label class="choice"><input type="checkbox" name="problemes" value="Aucun"> Aucun problème particulier</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_5" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">6. À quelle fréquence survient votre principal problème ?</label><div class="choices">
+<label class="choice"><input type="radio" name="frequence" value="Plusieurs fois par jour"> Plusieurs fois par jour</label>
+<label class="choice"><input type="radio" name="frequence" value="Tous les jours"> Tous les jours</label>
+<label class="choice"><input type="radio" name="frequence" value="Plusieurs fois par semaine"> Plusieurs fois par semaine</label>
+<label class="choice"><input type="radio" name="frequence" value="Une fois par semaine"> Environ une fois par semaine</label>
+<label class="choice"><input type="radio" name="frequence" value="Quelques fois par mois"> Quelques fois par mois</label>
+<label class="choice"><input type="radio" name="frequence" value="Rarement"> Rarement</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_6" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">7. Combien de temps ces problèmes vous font-ils perdre environ chaque semaine ?</label><div class="choices">
+<label class="choice"><input type="radio" name="temps_perdu" value="Moins de 1 heure"> Moins de 1 heure</label>
+<label class="choice"><input type="radio" name="temps_perdu" value="1 à 3 heures"> 1 à 3 heures</label>
+<label class="choice"><input type="radio" name="temps_perdu" value="3 à 5 heures"> 3 à 5 heures</label>
+<label class="choice"><input type="radio" name="temps_perdu" value="5 à 10 heures"> 5 à 10 heures</label>
+<label class="choice"><input type="radio" name="temps_perdu" value="Plus de 10 heures"> Plus de 10 heures</label>
+<label class="choice"><input type="radio" name="temps_perdu" value="Difficile à estimer"> Difficile à estimer</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_7" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">8. Quelles conséquences ces problèmes ont-ils pour vous ?</label><div class="choices">
+<label class="choice"><input type="checkbox" name="consequences" value="Perte de temps"> Perte de temps</label>
+<label class="choice"><input type="checkbox" name="consequences" value="Charge mentale"> Stress / charge mentale</label>
+<label class="choice"><input type="checkbox" name="consequences" value="Retards"> Retards / reports</label>
+<label class="choice"><input type="checkbox" name="consequences" value="Erreurs"> Risque d’erreur ou d’oubli</label>
+<label class="choice"><input type="checkbox" name="consequences" value="Doublon"> Travail en doublon</label>
+<label class="choice"><input type="checkbox" name="consequences" value="Suivi patient"> Impact sur le suivi patient</label>
+<label class="choice"><input type="checkbox" name="consequences" value="Horaires"> Travail administratif hors horaires</label>
+<label class="choice"><input type="checkbox" name="consequences" value="Aucune"> Peu ou pas de conséquence</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_8" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">9. Aujourd’hui, comment contournez-vous principalement ces difficultés ?</label><div class="choices">
+<label class="choice"><input type="checkbox" name="contournements" value="Manuel"> Je fais la tâche manuellement</label>
+<label class="choice"><input type="checkbox" name="contournements" value="Papier"> Papier / notes personnelles</label>
+<label class="choice"><input type="checkbox" name="contournements" value="Excel"> Excel / tableau personnel</label>
+<label class="choice"><input type="checkbox" name="contournements" value="Logiciels multiples"> Plusieurs logiciels différents</label>
+<label class="choice"><input type="checkbox" name="contournements" value="Secrétariat"> Je délègue au secrétariat</label>
+<label class="choice"><input type="checkbox" name="contournements" value="Pas de solution"> Je n’ai pas de vraie solution</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_9" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">10. Quelles fonctions vous manquent le plus aujourd’hui ?</label><div class="choices">
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Résumé patient"> Résumé automatique du dossier patient</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Recherche intelligente"> Recherche rapide / intelligente</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Courriers automatiques"> Aide à la rédaction de courriers / comptes rendus</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Rappels"> Rappels automatiques</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Suivi"> Suivi automatique des patients à surveiller</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Documents"> Classement automatique des documents</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Coordination"> Meilleure coordination entre professionnels</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Dictée"> Dictée vocale / saisie plus rapide</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Tableau de bord"> Tableau de bord des tâches / suivis</label>
+<label class="choice"><input type="checkbox" name="fonctions_manquantes" value="Automatisation"> Automatisation des tâches répétitives</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_10" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">11. Parmi ces fonctions, lesquelles seraient indispensables dans un nouvel outil ?</label><p class="help">Cochez idéalement 3 choix maximum.</p><div class="choices">
+<label class="choice"><input type="checkbox" name="indispensables" value="Résumé patient"> Résumé patient</label>
+<label class="choice"><input type="checkbox" name="indispensables" value="Recherche"> Recherche intelligente</label>
+<label class="choice"><input type="checkbox" name="indispensables" value="Rédaction"> Rédaction assistée</label>
+<label class="choice"><input type="checkbox" name="indispensables" value="Rappels"> Rappels / alertes</label>
+<label class="choice"><input type="checkbox" name="indispensables" value="Suivi"> Suivi des patients</label>
+<label class="choice"><input type="checkbox" name="indispensables" value="Documents"> Gestion documentaire</label>
+<label class="choice"><input type="checkbox" name="indispensables" value="Coordination"> Coordination</label>
+<label class="choice"><input type="checkbox" name="indispensables" value="Automatisation"> Automatisation</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_11" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">12. Quelles tâches accepteriez-vous qu’un outil automatise ?</label><div class="choices">
+<label class="choice"><input type="checkbox" name="automatisation" value="Préparation consultation"> Préparation d’une consultation</label>
+<label class="choice"><input type="checkbox" name="automatisation" value="Résumé"> Résumé des informations importantes</label>
+<label class="choice"><input type="checkbox" name="automatisation" value="Courriers"> Préparation de courriers</label>
+<label class="choice"><input type="checkbox" name="automatisation" value="Classement"> Classement des documents</label>
+<label class="choice"><input type="checkbox" name="automatisation" value="Rappels"> Rappels de suivi</label>
+<label class="choice"><input type="checkbox" name="automatisation" value="Détection"> Détection des tâches / suivis à ne pas oublier</label>
+<label class="choice"><input type="checkbox" name="automatisation" value="Aucune"> Aucune de ces tâches</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_12" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">13. Pour qu’un nouvel outil soit intéressant, il devrait surtout…</label><div class="choices">
+<label class="choice"><input type="radio" name="benefice" value="Temps"> Me faire gagner du temps</label>
+<label class="choice"><input type="radio" name="benefice" value="Administratif"> Réduire l’administratif</label>
+<label class="choice"><input type="radio" name="benefice" value="Erreurs"> Réduire les erreurs / oublis</label>
+<label class="choice"><input type="radio" name="benefice" value="Suivi"> Améliorer le suivi des patients</label>
+<label class="choice"><input type="radio" name="benefice" value="Coordination"> Améliorer la coordination</label>
+<label class="choice"><input type="radio" name="benefice" value="Confort"> Améliorer mon confort de travail</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_13" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">14. Quel est approximativement le coût mensuel de votre logiciel métier actuel ?</label><div class="choices">
+<label class="choice"><input type="radio" name="cout_actuel" value="Moins de 50 €"> Moins de 50 €</label>
+<label class="choice"><input type="radio" name="cout_actuel" value="50 à 100 €"> 50 à 100 €</label>
+<label class="choice"><input type="radio" name="cout_actuel" value="100 à 200 €"> 100 à 200 €</label>
+<label class="choice"><input type="radio" name="cout_actuel" value="200 à 300 €"> 200 à 300 €</label>
+<label class="choice"><input type="radio" name="cout_actuel" value="Plus de 300 €"> Plus de 300 €</label>
+<label class="choice"><input type="radio" name="cout_actuel" value="Je ne sais pas"> Je ne sais pas</label>
+<label class="choice"><input type="radio" name="cout_actuel" value="Je préfère ne pas répondre"> Je préfère ne pas répondre</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_14" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">15. Ce tarif vous paraît-il justifié par les services rendus ?</label><div class="choices">
+<label class="choice"><input type="radio" name="prix_justifie" value="Oui"> Oui, totalement</label>
+<label class="choice"><input type="radio" name="prix_justifie" value="Plutôt oui"> Plutôt oui</label>
+<label class="choice"><input type="radio" name="prix_justifie" value="Plutôt non"> Plutôt non</label>
+<label class="choice"><input type="radio" name="prix_justifie" value="Non"> Pas du tout</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_15" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">16. Pour un nouvel outil réellement utile, quel budget mensuel vous semblerait acceptable ?</label><div class="choices">
+<label class="choice"><input type="radio" name="budget" value="Moins de 20 €"> Moins de 20 € / mois</label>
+<label class="choice"><input type="radio" name="budget" value="20 à 50 €"> 20 à 50 € / mois</label>
+<label class="choice"><input type="radio" name="budget" value="50 à 100 €"> 50 à 100 € / mois</label>
+<label class="choice"><input type="radio" name="budget" value="100 à 150 €"> 100 à 150 € / mois</label>
+<label class="choice"><input type="radio" name="budget" value="Plus de 150 €"> Plus de 150 € / mois</label>
+<label class="choice"><input type="radio" name="budget" value="Selon bénéfice"> Cela dépendrait du gain apporté</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_16" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">17. Quel mode de paiement vous conviendrait le mieux ?</label><div class="choices">
+<label class="choice"><input type="radio" name="paiement" value="Mensuel"> Abonnement mensuel</label>
+<label class="choice"><input type="radio" name="paiement" value="Annuel"> Abonnement annuel</label>
+<label class="choice"><input type="radio" name="paiement" value="Achat"> Achat unique</label>
+<label class="choice"><input type="radio" name="paiement" value="Inclus"> Inclus dans une solution existante</label>
+<label class="choice"><input type="radio" name="paiement" value="NSP"> Je ne sais pas</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_17" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">18. Quels éléments pourraient vous empêcher d’adopter un nouvel outil ?</label><div class="choices">
+<label class="choice"><input type="checkbox" name="freins" value="Prix"> Le prix</label>
+<label class="choice"><input type="checkbox" name="freins" value="Habitudes"> Le changement d’habitudes</label>
+<label class="choice"><input type="checkbox" name="freins" value="Formation"> Le temps de formation</label>
+<label class="choice"><input type="checkbox" name="freins" value="Compatibilité"> Le manque de compatibilité</label>
+<label class="choice"><input type="checkbox" name="freins" value="Sécurité"> La sécurité / confidentialité</label>
+<label class="choice"><input type="checkbox" name="freins" value="Complexité"> Un outil trop complexe</label>
+<label class="choice"><input type="checkbox" name="freins" value="Support"> Le manque de support</label>
+<label class="choice"><input type="checkbox" name="freins" value="Aucun"> Aucun frein particulier</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_18" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">19. Qui décide habituellement de l’achat ou du changement d’un logiciel ?</label><div class="choices">
+<label class="choice"><input type="radio" name="decideur" value="Moi"> Moi-même</label>
+<label class="choice"><input type="radio" name="decideur" value="Associés"> Plusieurs praticiens / associés</label>
+<label class="choice"><input type="radio" name="decideur" value="Direction"> Direction / gestionnaire</label>
+<label class="choice"><input type="radio" name="decideur" value="Informatique"> Service informatique / prestataire</label>
+<label class="choice"><input type="radio" name="decideur" value="Autre"> Autre</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_19" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">20. Seriez-vous prêt(e) à tester gratuitement un prototype pendant quelques semaines ?</label><div class="choices">
+<label class="choice"><input type="radio" name="test_pilote" value="Oui"> Oui</label>
+<label class="choice"><input type="radio" name="test_pilote" value="Peut-être"> Peut-être</label>
+<label class="choice"><input type="radio" name="test_pilote" value="Non"> Non</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_20" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">21. Si le test était concluant, pourriez-vous envisager une version payante ?</label><div class="choices">
+<label class="choice"><input type="radio" name="achat" value="Oui"> Oui</label>
+<label class="choice"><input type="radio" name="achat" value="Peut-être"> Peut-être</label>
+<label class="choice"><input type="radio" name="achat" value="Selon prix"> Oui, selon le prix et le gain réel</label>
+<label class="choice"><input type="radio" name="achat" value="Non"> Non</label></div>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_21" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">22. Un besoin important manque-t-il dans cette liste ?</label>
+<textarea name="autre_besoin" placeholder="Une seule phrase suffit si vous souhaitez préciser un besoin."></textarea>
+<label class="help">Note / Autre</label><textarea class="note-autre" name="note_22" placeholder="Précision ..."></textarea></div>
+
+<div class="q"><label class="title">23. Coordonnées : Nom, Prénom, Mail, Téléphone… (Indiquer ce que vous souhaitez)</label>
+<input type="text" name="contact" placeholder=""></div>
+
+<div class="actions"><button type="submit">ENREGISTRER</button></div>
+</form>
+<div class="footer">Questionnaire professionnels de santé — Étude terrain indépendante</div>
+</main>
+</body>
+</html>
