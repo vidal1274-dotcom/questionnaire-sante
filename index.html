@@ -238,5 +238,81 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
 </form>
 <div class="footer">Questionnaire professionnels de santé — Étude terrain indépendante</div>
 </main>
+
+<script>
+(() => {
+  const form = document.getElementById("survey");
+  if (!form) return;
+
+  const endpoint = "https://questionnaire-sante-gules.vercel.app/api/submit";
+  const button = form.querySelector('button[type="submit"]');
+
+  const status = document.createElement("div");
+  status.id = "submit-status";
+  status.style.marginTop = "16px";
+  status.style.padding = "12px 14px";
+  status.style.borderRadius = "10px";
+  status.style.display = "none";
+  status.style.textAlign = "center";
+  status.style.fontWeight = "700";
+  form.querySelector(".actions").appendChild(status);
+
+  function formToObject(formEl) {
+    const fd = new FormData(formEl);
+    const data = {};
+    for (const [key, value] of fd.entries()) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        if (!Array.isArray(data[key])) data[key] = [data[key]];
+        data[key].push(value);
+      } else {
+        data[key] = value;
+      }
+    }
+    return data;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    status.style.display = "block";
+    status.style.background = "#eef3ff";
+    status.style.color = "#24408e";
+    status.textContent = "Enregistrement en cours…";
+    button.disabled = true;
+    button.textContent = "ENREGISTREMENT…";
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formToObject(form))
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Erreur lors de l'enregistrement");
+      }
+
+      status.style.background = "#e9f8f1";
+      status.style.color = "#0f6b4c";
+      status.textContent = "Merci, votre questionnaire a bien été enregistré.";
+      button.textContent = "ENREGISTRÉ";
+      form.reset();
+
+      setTimeout(() => {
+        button.disabled = false;
+        button.textContent = "ENREGISTRER";
+      }, 2500);
+    } catch (error) {
+      status.style.background = "#fff0f0";
+      status.style.color = "#a32626";
+      status.textContent = "Une erreur est survenue. Merci de réessayer dans quelques instants.";
+      button.disabled = false;
+      button.textContent = "ENREGISTRER";
+      console.error(error);
+    }
+  });
+})();
+</script>
 </body>
 </html>
