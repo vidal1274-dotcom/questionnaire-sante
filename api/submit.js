@@ -15,6 +15,15 @@ const ALLOWED_ORIGINS = new Set([
   "https://vidal1274-dotcom.github.io",
   normalizeOrigin(ALLOWED_ORIGIN)
 ].filter(Boolean));
+function timeoutController(ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return {
+    signal: controller.signal,
+    clear: () => clearTimeout(timer)
+  };
+}
+
 const GH_OWNER = process.env.GH_OWNER || process.env["PROPRIÉTAIRE DE GH"] || process.env.PROPRIETAIRE_DE_GH || "vidal1274-dotcom";
 const GH_REPO = process.env.GH_RESPONSES_REPO || "questionnaire-sante-reponses";
 
@@ -81,7 +90,7 @@ function cors(res, origin) {
     res.setHeader("Access-Control-Allow-Origin", normalized);
   }
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
@@ -221,21 +230,34 @@ async function saveToGitHub(record, id, receivedAt) {
   const encoded = Buffer.from(JSON.stringify(recordWithLabels, null, 2), "utf8").toString("base64");
   const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`;
 
-  const r = await fetch(url, {
-    method: "PUT",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: `Nouvelle réponse questionnaire ${id}`,
-      content: encoded
-    })
-  });
+  const timeout = timeoutController(7000);
+  let r;
+  try {
+    r = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: `Nouvelle réponse questionnaire ${id}`,
+        content: encoded
+      }),
+      signal: timeout.signal
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") throw new Error("Délai GitHub dépassé");
+    throw err;
+  } finally {
+    timeout.clear();
+  }
 
-  if (!r.ok) throw new Error("Erreur enregistrement GitHub");
+  if (!r.ok) {
+    const detail = await r.text().catch(() => "");
+    throw new Error(`Erreur enregistrement GitHub (HTTP ${r.status})${detail ? ": " + detail.slice(0, 120) : ""}`);
+  }
   return path;
 }
 
@@ -251,7 +273,10 @@ async function sendEmail(data, id, receivedAt) {
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
-    auth: { user: smtpUser, pass: smtpPass }
+    auth: { user: smtpUser, pass: smtpPass },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 7000
   });
 
   const profession = displayValue(data.profession);
@@ -271,6 +296,7 @@ async function sendEmail(data, id, receivedAt) {
 module.exports = async function handler(req, res) {
   const origin = req.headers.origin || "";
   cors(res, origin);
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
 
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ ok: false });
