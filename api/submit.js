@@ -72,7 +72,9 @@ const QUESTION_LABELS = {
   note_21: "Note / Autre – version payante",
   autre_besoin: "22. Un besoin important manque-t-il dans cette liste ?",
   note_22: "Note / Autre – besoin complémentaire",
-  contact: "23. Coordonnées : Nom, Prénom, Mail, Téléphone"
+  impayes: "23. La gestion et la relance des impayés représentent-elles une difficulté dans votre activité ?",
+  note_23: "Note / Autre – relances des impayés",
+  contact: "24. Coordonnées : Nom, Prénom, Mail, Téléphone"
 };
 
 const FIELD_ORDER = [
@@ -81,7 +83,7 @@ const FIELD_ORDER = [
   "contournements","note_9","fonctions_manquantes","note_10","indispensables","note_11",
   "automatisation","note_12","benefice","note_13","cout_actuel","note_14","prix_justifie","note_15",
   "budget","note_16","paiement","note_17","freins","note_18","decideur","note_19",
-  "test_pilote","note_20","achat","note_21","autre_besoin","note_22","contact"
+  "test_pilote","note_20","achat","note_21","autre_besoin","note_22","impayes","note_23","contact"
 ];
 
 function cors(res, origin) {
