@@ -288,9 +288,13 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
         body: JSON.stringify(formToObject(form))
       });
 
-      const result = await response.json().catch(() => ({}));
+      const rawText = await response.text();
+      let result = {};
+      try { result = rawText ? JSON.parse(rawText) : {}; } catch (_) {}
+
       if (!response.ok || !result.ok) {
-        throw new Error(result.error || "Erreur lors de l'enregistrement");
+        const detail = result.error || ("HTTP " + response.status + (rawText ? " – " + rawText.slice(0, 120) : ""));
+        throw new Error(detail);
       }
 
       status.style.background = "#e9f8f1";
@@ -318,7 +322,14 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
     } catch (error) {
       status.style.background = "#fff0f0";
       status.style.color = "#a32626";
-      status.textContent = "Une erreur est survenue. Merci de réessayer dans quelques instants.";
+
+      const message = error && error.message ? error.message : "Erreur inconnue";
+      if (message.includes("Failed to fetch") || message.includes("NetworkError")) {
+        status.textContent = "Connexion au service d’enregistrement impossible. Vérifier l’adresse Vercel ou l’autorisation CORS.";
+      } else {
+        status.textContent = "Échec de l’enregistrement : " + message;
+      }
+
       button.disabled = false;
       button.textContent = "ENREGISTRER";
       console.error(error);
