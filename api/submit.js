@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://vidal1274-dotcom.github.io";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || process.env.ORIGINE_AUTORIS || "https://vidal1274-dotcom.github.io";
 
 function normalizeOrigin(value) {
   try {
@@ -15,7 +15,7 @@ const ALLOWED_ORIGINS = new Set([
   "https://vidal1274-dotcom.github.io",
   normalizeOrigin(ALLOWED_ORIGIN)
 ].filter(Boolean));
-const GH_OWNER = process.env.GH_OWNER || "vidal1274-dotcom";
+const GH_OWNER = process.env.GH_OWNER || process.env["PROPRIÉTAIRE DE GH"] || process.env.PROPRIETAIRE_DE_GH || "vidal1274-dotcom";
 const GH_REPO = process.env.GH_RESPONSES_REPO || "questionnaire-sante-reponses";
 
 const QUESTION_LABELS = {
@@ -240,7 +240,7 @@ async function saveToGitHub(record, id, receivedAt) {
 }
 
 async function sendEmail(data, id, receivedAt) {
-  const smtpUser = process.env.SMTP_USER;
+  const smtpUser = process.env.SMTP_USER || process.env["UTILISATEUR SMTP"] || process.env.UTILISATEUR_SMTP;
   const smtpPass = process.env.SMTP_APP_PASSWORD;
   const mailTo = process.env.MAIL_TO;
 
