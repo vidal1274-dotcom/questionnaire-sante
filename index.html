@@ -295,7 +295,19 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
 
       status.style.background = "#e9f8f1";
       status.style.color = "#0f6b4c";
-      status.textContent = "Merci, votre questionnaire a bien été enregistré.";
+
+      if (result.githubSaved === false && result.emailSent === true) {
+        status.style.background = "#fff8e6";
+        status.style.color = "#8a5a00";
+        status.textContent = "Réponses envoyées par mail, mais la sauvegarde GitHub n’a pas pu être confirmée.";
+      } else if (result.githubSaved === true && result.emailSent === false) {
+        status.style.background = "#fff8e6";
+        status.style.color = "#8a5a00";
+        status.textContent = "Questionnaire enregistré dans GitHub, mais l’envoi du mail n’a pas pu être confirmé.";
+      } else {
+        status.textContent = "Merci, votre questionnaire a bien été enregistré et transmis.";
+      }
+
       button.textContent = "ENREGISTRÉ";
       form.reset();
 
