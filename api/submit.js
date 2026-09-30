@@ -2,6 +2,19 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://vidal1274-dotcom.github.io";
+
+function normalizeOrigin(value) {
+  try {
+    return new URL(String(value || "")).origin;
+  } catch {
+    return String(value || "").replace(/\/$/, "");
+  }
+}
+
+const ALLOWED_ORIGINS = new Set([
+  "https://vidal1274-dotcom.github.io",
+  normalizeOrigin(ALLOWED_ORIGIN)
+].filter(Boolean));
 const GH_OWNER = process.env.GH_OWNER || "vidal1274-dotcom";
 const GH_REPO = process.env.GH_RESPONSES_REPO || "questionnaire-sante-reponses";
 
@@ -63,8 +76,9 @@ const FIELD_ORDER = [
 ];
 
 function cors(res, origin) {
-  if (origin === ALLOWED_ORIGIN || origin === ALLOWED_ORIGIN + "/") {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  const normalized = normalizeOrigin(origin);
+  if (ALLOWED_ORIGINS.has(normalized)) {
+    res.setHeader("Access-Control-Allow-Origin", normalized);
   }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -261,7 +275,7 @@ module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ ok: false });
 
-  if (origin && origin !== ALLOWED_ORIGIN && origin !== ALLOWED_ORIGIN + "/") {
+  if (origin && !ALLOWED_ORIGINS.has(normalizeOrigin(origin))) {
     return res.status(403).json({ ok: false, error: "Origine non autorisée" });
   }
 
