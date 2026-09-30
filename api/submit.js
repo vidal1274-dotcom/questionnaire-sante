@@ -271,16 +271,44 @@ module.exports = async function handler(req, res) {
     const id = crypto.randomUUID();
     const record = { id, receivedAt, source: "questionnaire-sante", data };
 
-    const githubPath = await saveToGitHub(record, id, receivedAt);
-
-    let emailSent = false;
+    let githubSaved = false;
+    let githubPath = null;
+    let githubError = null;
     try {
-      emailSent = await sendEmail(data, id, receivedAt);
-    } catch (emailError) {
-      console.error("Erreur email:", emailError);
+      githubPath = await saveToGitHub(record, id, receivedAt);
+      githubSaved = true;
+    } catch (err) {
+      githubError = err instanceof Error ? err.message : String(err);
+      console.error("Erreur GitHub:", err);
     }
 
-    return res.status(201).json({ ok: true, id, githubPath, emailSent });
+    let emailSent = false;
+    let emailError = null;
+    try {
+      emailSent = await sendEmail(data, id, receivedAt);
+      if (!emailSent) emailError = "Configuration email absente";
+    } catch (err) {
+      emailError = err instanceof Error ? err.message : String(err);
+      console.error("Erreur email:", err);
+    }
+
+    if (!githubSaved && !emailSent) {
+      return res.status(500).json({
+        ok: false,
+        error: "Enregistrement et transmission impossibles",
+        githubSaved,
+        emailSent
+      });
+    }
+
+    return res.status(201).json({
+      ok: true,
+      id,
+      githubSaved,
+      githubPath,
+      emailSent,
+      warning: (!githubSaved || !emailSent) ? "Transmission partielle" : null
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ ok: false, error: "Enregistrement impossible" });
