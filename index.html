@@ -244,7 +244,10 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
   const form = document.getElementById("survey");
   if (!form) return;
 
-  const endpoint = "https://questionnaire-sante-gules.vercel.app/api/submit";
+  // URL Vercel de production stable. Ne pas remplacer par une URL de preview/deployment.
+  const API_BASE = "https://questionnaire-sante-gules.vercel.app";
+  const endpoint = API_BASE + "/api/submit";
+  const healthEndpoint = API_BASE + "/api/health";
   const button = form.querySelector('button[type="submit"]');
 
   const status = document.createElement("div");
@@ -256,6 +259,27 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
   status.style.textAlign = "center";
   status.style.fontWeight = "700";
   form.querySelector(".actions").appendChild(status);
+
+  const serviceWarning = document.createElement("div");
+  serviceWarning.id = "service-warning";
+  serviceWarning.style.marginTop = "10px";
+  serviceWarning.style.padding = "10px 12px";
+  serviceWarning.style.borderRadius = "10px";
+  serviceWarning.style.display = "none";
+  serviceWarning.style.textAlign = "center";
+  serviceWarning.style.background = "#fff8e6";
+  serviceWarning.style.color = "#8a5a00";
+  serviceWarning.textContent = "Le service d’enregistrement semble momentanément indisponible. Vous pouvez quand même essayer d’enregistrer.";
+  form.querySelector(".actions").appendChild(serviceWarning);
+
+  fetch(healthEndpoint, { method: "GET", cache: "no-store" })
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) serviceWarning.style.display = "block";
+    })
+    .catch(() => {
+      serviceWarning.style.display = "block";
+    });
 
   function formToObject(formEl) {
     const fd = new FormData(formEl);
