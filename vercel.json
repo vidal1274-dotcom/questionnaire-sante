@@ -2,7 +2,10 @@
   "version": 2,
   "functions": {
     "api/submit.js": {
-      "maxDuration": 10
+      "maxDuration": 15
+    },
+    "api/health.js": {
+      "maxDuration": 5
     }
   }
 }
