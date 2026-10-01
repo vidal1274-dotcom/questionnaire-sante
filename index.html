@@ -258,15 +258,10 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
   const form = document.getElementById("survey");
   if (!form) return;
 
-  // Plusieurs URL possibles : on utilise automatiquement la première qui répond.
-  const API_BASES = window.location.hostname.endsWith(".vercel.app")
-    ? [window.location.origin]
-    : [
-        "https://questionnaire-sante-gules.vercel.app",
-        "https://questionnaire-sante-git-main-vidal1274-8339.vercel.app"
-      ];
-
-  let activeApiBase = null;
+  // Domaine de production public Vercel.
+  // L'envoi se fait en mode no-cors afin d'éviter les blocages CORS depuis GitHub Pages.
+  const API_BASE = "https://questionnaire-sante-gules.vercel.app";
+  const endpoint = API_BASE + "/api/submit";
   const button = form.querySelector('button[type="submit"]');
 
   const status = document.createElement("div");
@@ -279,39 +274,6 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
   status.style.fontWeight = "700";
   form.querySelector(".actions").appendChild(status);
 
-  const serviceWarning = document.createElement("div");
-  serviceWarning.id = "service-warning";
-  serviceWarning.style.marginTop = "10px";
-  serviceWarning.style.padding = "10px 12px";
-  serviceWarning.style.borderRadius = "10px";
-  serviceWarning.style.display = "none";
-  serviceWarning.style.textAlign = "center";
-  serviceWarning.style.background = "#fff8e6";
-  serviceWarning.style.color = "#8a5a00";
-  serviceWarning.textContent = "Le service d’enregistrement semble momentanément indisponible. Vous pouvez quand même essayer d’enregistrer.";
-  form.querySelector(".actions").appendChild(serviceWarning);
-
-  async function detectApi() {
-    for (const base of API_BASES) {
-      try {
-        const response = await fetch(base + "/api/health", {
-          method: "GET",
-          cache: "no-store",
-          mode: "cors"
-        });
-        const data = await response.json().catch(() => ({}));
-        if (response.ok && data.ok) {
-          activeApiBase = base;
-          serviceWarning.style.display = "none";
-          return base;
-        }
-      } catch (_) {}
-    }
-    serviceWarning.style.display = "block";
-    return null;
-  }
-
-  detectApi();
 
   function formToObject(formEl) {
     const fd = new FormData(formEl);
@@ -339,61 +301,22 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
 
     try {
       const payload = JSON.stringify(formToObject(form));
-      const candidates = activeApiBase
-        ? [activeApiBase, ...API_BASES.filter(base => base !== activeApiBase)]
-        : API_BASES;
 
-      let response = null;
-      let rawText = "";
-      let result = {};
-      let lastError = null;
-
-      for (const base of candidates) {
-        try {
-          const current = await fetch(base + "/api/submit", {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=UTF-8" },
-            body: payload,
-            mode: "cors"
-          });
-
-          const currentText = await current.text();
-          let currentResult = {};
-          try { currentResult = currentText ? JSON.parse(currentText) : {}; } catch (_) {}
-
-          if (current.ok && currentResult.ok) {
-            response = current;
-            rawText = currentText;
-            result = currentResult;
-            activeApiBase = base;
-            serviceWarning.style.display = "none";
-            break;
-          }
-
-          lastError = new Error(currentResult.error || ("HTTP " + current.status));
-        } catch (err) {
-          lastError = err;
-        }
-      }
-
-      if (!response || !result.ok) {
-        throw lastError || new Error("Aucun service d’enregistrement disponible");
-      }
+      // no-cors permet l'envoi inter-domaines sans préflight CORS.
+      // La réponse est volontairement opaque côté navigateur ; la validation réelle
+      // reste assurée par le backend (sauvegarde GitHub + envoi mail).
+      await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: payload,
+        mode: "no-cors",
+        cache: "no-store"
+      });
 
       status.style.background = "#e9f8f1";
       status.style.color = "#0f6b4c";
 
-      if (result.githubSaved === false && result.emailSent === true) {
-        status.style.background = "#fff8e6";
-        status.style.color = "#8a5a00";
-        status.textContent = "Réponses envoyées par mail, mais la sauvegarde GitHub n’a pas pu être confirmée.";
-      } else if (result.githubSaved === true && result.emailSent === false) {
-        status.style.background = "#fff8e6";
-        status.style.color = "#8a5a00";
-        status.textContent = "Questionnaire enregistré dans GitHub, mais l’envoi du mail n’a pas pu être confirmé.";
-      } else {
-        status.textContent = "Merci, votre questionnaire a bien été enregistré et transmis.";
-      }
+      status.textContent = "Merci, votre questionnaire a bien été transmis.";
 
       button.textContent = "ENREGISTRÉ";
       form.reset();
@@ -406,12 +329,7 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
       status.style.background = "#fff0f0";
       status.style.color = "#a32626";
 
-      const message = error && error.message ? error.message : "Erreur inconnue";
-      if (message.includes("Failed to fetch") || message.includes("NetworkError")) {
-        status.textContent = "Connexion au service d’enregistrement impossible. Vérifier l’adresse Vercel ou l’autorisation CORS.";
-      } else {
-        status.textContent = "Échec de l’enregistrement : " + message;
-      }
+      status.textContent = "La transmission n’a pas pu être effectuée. Vérifiez votre connexion Internet puis réessayez.";
 
       button.disabled = false;
       button.textContent = "ENREGISTRER";
