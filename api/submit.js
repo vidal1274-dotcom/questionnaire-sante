@@ -13,6 +13,7 @@ function normalizeOrigin(value) {
 
 const ALLOWED_ORIGINS = new Set([
   "https://vidal1274-dotcom.github.io",
+  "https://questionnaire-sante-gules.vercel.app",
   "https://questionnaire-sante-git-main-vidal1274-8339.vercel.app",
   normalizeOrigin(ALLOWED_ORIGIN)
 ].filter(Boolean));
@@ -309,7 +310,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const data = normalize(req.body);
+    let requestBody = req.body;
+    if (typeof requestBody === "string") {
+      try { requestBody = JSON.parse(requestBody); }
+      catch (_) { requestBody = {}; }
+    }
+    const data = normalize(requestBody);
     const receivedAt = new Date().toISOString();
     const id = crypto.randomUUID();
     const record = { id, receivedAt, source: "questionnaire-sante", data };
