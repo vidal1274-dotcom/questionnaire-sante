@@ -13,7 +13,7 @@ function normalizeOrigin(value) {
 
 const ALLOWED_ORIGINS = new Set([
   "https://vidal1274-dotcom.github.io",
-  "https://questionnaire-sante-gules.vercel.app",
+  "https://questionnaire-sante-git-main-vidal1274-8339.vercel.app",
   normalizeOrigin(ALLOWED_ORIGIN)
 ].filter(Boolean));
 function timeoutController(ms) {
