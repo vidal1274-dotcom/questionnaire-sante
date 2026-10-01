@@ -258,7 +258,10 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
   if (!form) return;
 
   // URL Vercel de production stable. Ne pas remplacer par une URL de preview/deployment.
-  const API_BASE = "https://questionnaire-sante-gules.vercel.app";
+  // Sur Vercel, utilise la même origine. Sur GitHub Pages, appelle l'API de production Vercel.
+  const API_BASE = window.location.hostname.endsWith(".vercel.app")
+    ? window.location.origin
+    : "https://questionnaire-sante-gules.vercel.app";
   const endpoint = API_BASE + "/api/submit";
   const healthEndpoint = API_BASE + "/api/health";
   const button = form.querySelector('button[type="submit"]');
