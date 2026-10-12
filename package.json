@@ -4,5 +4,8 @@
   "version": "1.0.0",
   "dependencies": {
     "nodemailer": "^6.9.16"
+  },
+  "scripts": {
+    "test": "node --test test/submit.test.js"
   }
 }

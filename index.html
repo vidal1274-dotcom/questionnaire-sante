@@ -258,10 +258,14 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
   const form = document.getElementById("survey");
   if (!form) return;
 
-  // Domaine de production public Vercel.
-  // L'envoi se fait en mode no-cors afin d'éviter les blocages CORS depuis GitHub Pages.
+  // API de production (même origine sur Vercel ; GitHub Pages redirige vers cette page).
+  // Requête lisible (pas de mode no-cors) : le succès n'est affiché que si le serveur
+  // confirme réellement la sauvegarde.
   const API_BASE = "https://questionnaire-sante-gules.vercel.app";
   const endpoint = API_BASE + "/api/submit";
+  const REQUEST_TIMEOUT_MS = 20000;
+  const SUCCESS_MESSAGE = "Merci. Votre questionnaire a bien été enregistré.";
+  const ERROR_MESSAGE = "Une erreur est survenue pendant l’envoi. Votre questionnaire n’a peut-être pas été enregistré. Merci de réessayer ou de nous contacter.";
   const button = form.querySelector('button[type="submit"]');
 
   const status = document.createElement("div");
@@ -289,51 +293,77 @@ button{border:0;border-radius:12px;padding:14px 28px;font-weight:800;font-size:1
     return data;
   }
 
+  function newSubmissionId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+    const b = new Uint8Array(16);
+    window.crypto.getRandomValues(b);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+  }
+
+  // Un identifiant par questionnaire rempli : un nouvel essai après une erreur, ou un double
+  // envoi, réutilise le même identifiant et ne crée pas de doublon côté serveur.
+  let submissionId = newSubmissionId();
+  let sending = false;
+
+  function showStatus(kind, text) {
+    status.style.display = "block";
+    status.style.background = kind === "ok" ? "#e9f8f1" : kind === "error" ? "#fff0f0" : "#eef3ff";
+    status.style.color = kind === "ok" ? "#0f6b4c" : kind === "error" ? "#a32626" : "#24408e";
+    status.textContent = text;
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (sending) return; // double clic : un seul envoi à la fois
+    sending = true;
 
-    status.style.display = "block";
-    status.style.background = "#eef3ff";
-    status.style.color = "#24408e";
-    status.textContent = "Enregistrement en cours…";
+    showStatus("info", "Enregistrement en cours…");
     button.disabled = true;
     button.textContent = "ENREGISTREMENT…";
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const payload = JSON.stringify(formToObject(form));
-
-      // no-cors permet l'envoi inter-domaines sans préflight CORS.
-      // La réponse est volontairement opaque côté navigateur ; la validation réelle
-      // reste assurée par le backend (sauvegarde GitHub + envoi mail).
-      await fetch(endpoint, {
+      const payload = JSON.stringify({ ...formToObject(form), submission_id: submissionId });
+      // text/plain : requête simple, sans préflight ; le serveur lit le JSON.
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=UTF-8" },
         body: payload,
-        mode: "no-cors",
-        cache: "no-store"
+        cache: "no-store",
+        signal: controller.signal
       });
+      let result = null;
+      try { result = await response.json(); } catch (_) { result = null; }
 
-      status.style.background = "#e9f8f1";
-      status.style.color = "#0f6b4c";
-
-      status.textContent = "Merci, votre questionnaire a bien été transmis.";
-
-      button.textContent = "ENREGISTRÉ";
-      form.reset();
-
-      setTimeout(() => {
+      if (response.ok && result && result.ok === true && result.saved === true) {
+        showStatus("ok", SUCCESS_MESSAGE);
+        button.textContent = "ENREGISTRÉ";
+        form.reset();
+        submissionId = newSubmissionId();
+        setTimeout(() => {
+          button.disabled = false;
+          button.textContent = "ENREGISTRER";
+        }, 2500);
+        return;
+      }
+      if (response.status === 400 && result && result.error) {
+        showStatus("error", result.error);
+      } else {
+        showStatus("error", ERROR_MESSAGE);
+      }
+    } catch (error) {
+      showStatus("error", ERROR_MESSAGE);
+    } finally {
+      clearTimeout(timer);
+      sending = false;
+      if (button.textContent !== "ENREGISTRÉ") {
         button.disabled = false;
         button.textContent = "ENREGISTRER";
-      }, 2500);
-    } catch (error) {
-      status.style.background = "#fff0f0";
-      status.style.color = "#a32626";
-
-      status.textContent = "La transmission n’a pas pu être effectuée. Vérifiez votre connexion Internet puis réessayez.";
-
-      button.disabled = false;
-      button.textContent = "ENREGISTRER";
-      console.error(error);
+      }
     }
   });
 })();

@@ -215,29 +215,26 @@ function makeMailHtml(data, id, receivedAt) {
   </html>`;
 }
 
-async function saveToGitHub(record, id, receivedAt) {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Journal technique : événement, horodatage, identifiant, code d'état. Jamais de réponse au
+// questionnaire, de coordonnées, de jeton ni de mot de passe.
+function logEvent(event, submissionId, status, extra) {
+  const entry = { event, ts: new Date().toISOString(), submission_id: submissionId || null, status };
+  if (extra) Object.assign(entry, extra);
+  console.log(JSON.stringify(entry));
+}
+
+function githubUrl(path) {
+  return `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`;
+}
+
+async function githubPut(path, content, message, sha) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error("GITHUB_TOKEN manquant");
-
-  const d = new Date(receivedAt);
-  const yyyy = String(d.getUTCFullYear());
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(d.getUTCDate()).padStart(2, "0");
-  const stamp = receivedAt.replace(/[:.]/g, "-");
-  const path = `reponses/${yyyy}/${mm}/${dd}/${stamp}_${id}.json`;
-
-  const recordWithLabels = {
-    ...record,
-    readableResponses: orderedEntries(record.data).map(([question, answer]) => ({ question, answer }))
-  };
-
-  const encoded = Buffer.from(JSON.stringify(recordWithLabels, null, 2), "utf8").toString("base64");
-  const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`;
-
   const timeout = timeoutController(7000);
-  let r;
   try {
-    r = await fetch(url, {
+    return await fetch(githubUrl(path), {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -246,8 +243,9 @@ async function saveToGitHub(record, id, receivedAt) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        message: `Nouvelle réponse questionnaire ${id}`,
-        content: encoded
+        message,
+        content: Buffer.from(JSON.stringify(content, null, 2), "utf8").toString("base64"),
+        ...(sha ? { sha } : {})
       }),
       signal: timeout.signal
     });
@@ -257,12 +255,51 @@ async function saveToGitHub(record, id, receivedAt) {
   } finally {
     timeout.clear();
   }
+}
 
-  if (!r.ok) {
-    const detail = await r.text().catch(() => "");
-    throw new Error(`Erreur enregistrement GitHub (HTTP ${r.status})${detail ? ": " + detail.slice(0, 120) : ""}`);
+function recordPath(id, receivedAt) {
+  const d = new Date(receivedAt);
+  const yyyy = String(d.getUTCFullYear());
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  // Chemin déterminé par l'identifiant de soumission : un second envoi du même questionnaire
+  // (double clic, nouvel essai) vise le même fichier et ne crée pas de doublon.
+  return `reponses/${yyyy}/${mm}/${dd}/${id}.json`;
+}
+
+// Sauvegarde persistante AVANT tout envoi d'e-mail. Renvoie { path, sha, duplicate }.
+async function saveToGitHub(record) {
+  const path = recordPath(record.id, record.receivedAt);
+  const r = await githubPut(path, record, `Nouvelle réponse questionnaire ${record.id}`);
+  if (r.status === 422) {
+    // Fichier déjà présent : même soumission reçue deux fois.
+    return { path, sha: null, duplicate: true };
   }
-  return path;
+  if (!r.ok) throw new Error(`Erreur enregistrement GitHub (HTTP ${r.status})`);
+  const body = await r.json().catch(() => ({}));
+  return { path, sha: body && body.content ? body.content.sha : null, duplicate: false };
+}
+
+// Statut de la notification ajouté à la réponse déjà sauvegardée (jamais bloquant).
+async function saveEmailStatus(record, path, sha) {
+  if (!sha) return;
+  const r = await githubPut(path, record, `Statut e-mail ${record.email_status} ${record.id}`, sha);
+  if (!r.ok) throw new Error(`Erreur mise à jour du statut (HTTP ${r.status})`);
+}
+
+// Cause technique de l'échec d'envoi, sans adresse ni secret.
+function emailErrorSummary(err) {
+  if (!err) return "inconnue";
+  const parts = [err.code, err.responseCode, err.command].filter(Boolean).join(" ");
+  const message = String(err.message || err)
+    .replace(/[\w.+-]+@[\w.-]+/g, "<adresse>")
+    .slice(0, 160);
+  return (parts ? parts + " — " : "") + message;
+}
+
+function hasAnswers(data) {
+  return Object.entries(data).some(([key, value]) =>
+    key !== "submission_id" && displayValue(value) !== "");
 }
 
 async function sendEmail(data, id, receivedAt) {
@@ -309,57 +346,98 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ ok: false, error: "Origine non autorisée" });
   }
 
-  try {
-    let requestBody = req.body;
-    if (typeof requestBody === "string") {
-      try { requestBody = JSON.parse(requestBody); }
-      catch (_) { requestBody = {}; }
-    }
-    const data = normalize(requestBody);
-    const receivedAt = new Date().toISOString();
-    const id = crypto.randomUUID();
-    const record = { id, receivedAt, source: "questionnaire-sante", data };
-
-    let githubSaved = false;
-    let githubPath = null;
-    let githubError = null;
-    try {
-      githubPath = await saveToGitHub(record, id, receivedAt);
-      githubSaved = true;
-    } catch (err) {
-      githubError = err instanceof Error ? err.message : String(err);
-      console.error("Erreur GitHub:", err);
-    }
-
-    let emailSent = false;
-    let emailError = null;
-    try {
-      emailSent = await sendEmail(data, id, receivedAt);
-      if (!emailSent) emailError = "Configuration email absente";
-    } catch (err) {
-      emailError = err instanceof Error ? err.message : String(err);
-      console.error("Erreur email:", err);
-    }
-
-    if (!githubSaved && !emailSent) {
-      return res.status(500).json({
-        ok: false,
-        error: "Enregistrement et transmission impossibles",
-        githubSaved,
-        emailSent
-      });
-    }
-
-    return res.status(201).json({
-      ok: true,
-      id,
-      githubSaved,
-      githubPath,
-      emailSent,
-      warning: (!githubSaved || !emailSent) ? "Transmission partielle" : null
-    });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ ok: false, error: "Enregistrement impossible" });
+  let requestBody = req.body;
+  if (typeof requestBody === "string") {
+    try { requestBody = JSON.parse(requestBody); }
+    catch (_) { requestBody = null; }
   }
+  if (!requestBody || typeof requestBody !== "object" || Array.isArray(requestBody)) {
+    logEvent("FORM_REJECTED", null, 400, { reason: "format" });
+    return res.status(400).json({ ok: false, error: "Format de réponse invalide." });
+  }
+
+  const clientId = String(requestBody.submission_id || "");
+  const id = UUID_RE.test(clientId) ? clientId.toLowerCase() : crypto.randomUUID();
+  logEvent("FORM_RECEIVED", id, 202);
+
+  const data = normalize(requestBody);
+  delete data.submission_id;
+  if (!hasAnswers(data)) {
+    logEvent("FORM_REJECTED", id, 400, { reason: "vide" });
+    return res.status(400).json({
+      ok: false,
+      error: "Le questionnaire est vide : merci de répondre à au moins une question."
+    });
+  }
+  logEvent("FORM_VALIDATED", id, 200);
+
+  const receivedAt = new Date().toISOString();
+  const record = {
+    id,
+    submission_id: id,
+    receivedAt,
+    created_at: receivedAt,
+    source: "questionnaire-sante",
+    email_status: "pending",
+    email_error: null,
+    data,
+    readableResponses: orderedEntries(data).map(([question, answer]) => ({ question, answer }))
+  };
+
+  // 1. Sauvegarde persistante : c'est elle, et elle seule, qui confirme l'enregistrement.
+  let saved;
+  try {
+    saved = await saveToGitHub(record);
+  } catch (err) {
+    logEvent("FORM_SAVE_FAILED", id, 500, { error: String(err.message || err).slice(0, 120) });
+    // Filet de sécurité : transmettre les réponses par e-mail, sans annoncer de succès.
+    try {
+      await sendEmail(data, id, receivedAt);
+      logEvent("EMAIL_SENT", id, 250, { fallback: true });
+    } catch (mailErr) {
+      logEvent("EMAIL_FAILED", id, 500, { error: emailErrorSummary(mailErr) });
+    }
+    return res.status(500).json({
+      ok: false,
+      saved: false,
+      submission_id: id,
+      error: "Enregistrement impossible pour le moment."
+    });
+  }
+  if (saved.duplicate) {
+    logEvent("FORM_DUPLICATE", id, 200);
+    return res.status(200).json({ ok: true, saved: true, duplicate: true, submission_id: id });
+  }
+  logEvent("FORM_SAVED", id, 201);
+
+  // 2. Notification e-mail : son échec ne fait jamais perdre la réponse.
+  try {
+    const sent = await sendEmail(data, id, receivedAt);
+    record.email_status = sent ? "sent" : "failed";
+    record.email_error = sent ? null : "configuration e-mail absente";
+  } catch (err) {
+    record.email_status = "failed";
+    record.email_error = emailErrorSummary(err);
+  }
+  logEvent(
+    record.email_status === "sent" ? "EMAIL_SENT" : "EMAIL_FAILED",
+    id,
+    record.email_status === "sent" ? 250 : 500,
+    record.email_error ? { error: record.email_error } : null
+  );
+
+  try {
+    await saveEmailStatus(record, saved.path, saved.sha);
+  } catch (err) {
+    logEvent("EMAIL_STATUS_NOT_SAVED", id, 500, { error: String(err.message || err).slice(0, 120) });
+  }
+
+  return res.status(201).json({
+    ok: true,
+    saved: true,
+    submission_id: id,
+    email_status: record.email_status
+  });
 };
+
+module.exports._testing = { recordPath, hasAnswers, emailErrorSummary, UUID_RE };

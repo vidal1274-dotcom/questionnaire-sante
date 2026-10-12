@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
   return res.status(githubConfigured || emailConfigured ? 200 : 503).json({
     ok: githubConfigured || emailConfigured,
     service: "questionnaire-sante",
-    version: "stable-2026-09-30",
+    version: "fiable-2026-10-12",
     githubConfigured,
     emailConfigured
   });
